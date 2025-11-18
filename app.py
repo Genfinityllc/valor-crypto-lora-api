@@ -185,8 +185,11 @@ async def runpod_generate(request: dict):
         
         # Return in RunPod serverless format
         if result.success:
+            # Convert base64 to data URL for backend compatibility
+            image_data_url = f"data:image/png;base64,{result.image_base64}"
             return {
                 "success": True,
+                "image_url": image_data_url,
                 "image_base64": result.image_base64,
                 "metadata": result.metadata
             }
