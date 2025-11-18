@@ -49,11 +49,13 @@ def load_lora_pipeline():
         print(f"🚀 Loading SDXL pipeline on {_device}")
         
         # Load SDXL base model
+        hf_token = os.environ.get("HUGGINGFACE_TOKEN")
         _pipeline = DiffusionPipeline.from_pretrained(
             "stabilityai/stable-diffusion-xl-base-1.0",
             torch_dtype=torch.float16 if _device == "cuda" else torch.float32,
             use_safetensors=True,
-            variant="fp16" if _device == "cuda" else None
+            variant="fp16" if _device == "cuda" else None,
+            token=hf_token
         )
         
         # Try to load custom LoRA if available
