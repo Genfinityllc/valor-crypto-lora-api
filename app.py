@@ -152,7 +152,14 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint"""
-    return {"status": "OK", "pipeline_loaded": _pipeline is not None}
+    return {
+        "status": "OK", 
+        "pipeline_loaded": _pipeline is not None,
+        "device": _device,
+        "cuda_available": torch.cuda.is_available(),
+        "service": "Valor Crypto LoRA API",
+        "version": "2.0"
+    }
 
 @app.post("/generate", response_model=GenerationResponse)
 async def generate_image(request: GenerationRequest):
@@ -210,9 +217,25 @@ async def generate_image(request: GenerationRequest):
         )
 
 if __name__ == "__main__":
+    print("🚀 Starting Valor Crypto LoRA API...")
+    print(f"🖥️ Device: {_device}")
+    print(f"📍 PyTorch version: {torch.__version__}")
+    
     # Pre-load pipeline
-    load_lora_pipeline()
+    try:
+        print("📚 Loading pipeline...")
+        load_lora_pipeline()
+        print("✅ Pipeline loaded successfully!")
+    except Exception as e:
+        print(f"❌ Failed to load pipeline: {e}")
+        # Continue anyway for debugging
     
     # Start API server
     port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"🌐 Starting server on 0.0.0.0:{port}")
+    
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except Exception as e:
+        print(f"❌ Server failed to start: {e}")
+        raise
