@@ -25,6 +25,10 @@ pip list | grep -E "(torch|diffusers|fastapi|uvicorn)"
 echo "🖥️ Checking GPU..."
 python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'Device: {torch.cuda.get_device_name() if torch.cuda.is_available() else \"CPU\"}')"
 
+# Run diagnostics first
+echo "🔍 Running container diagnostics..."
+python diagnose.py
+
 # Start the application
 echo "🎯 Starting FastAPI application on port 8080..."
 

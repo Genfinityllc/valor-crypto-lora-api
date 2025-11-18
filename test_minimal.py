@@ -26,6 +26,8 @@ async def test_run(request: dict):
         input_data = request.get("input", request)
         prompt = input_data.get("prompt", "test")
         
+        print(f"🧪 MINIMAL TEST: Processing '{prompt}'")
+        
         # Create a simple colored rectangle instead of AI generation
         img = Image.new('RGB', (512, 512), color=(100, 150, 200))
         
@@ -34,6 +36,8 @@ async def test_run(request: dict):
         img.save(buffer, format="PNG")
         img_str = base64.b64encode(buffer.getvalue()).decode()
         
+        print(f"✅ MINIMAL TEST: Generated {len(img_str)} byte image")
+        
         return {
             "success": True,
             "image_url": f"data:image/png;base64,{img_str}",
@@ -41,12 +45,18 @@ async def test_run(request: dict):
             "metadata": {
                 "prompt": prompt,
                 "method": "minimal_test",
-                "message": "This is a test image, not AI generated"
+                "message": "SUCCESS: Container is working! This is a test image.",
+                "timestamp": "2025-11-18",
+                "container_status": "healthy"
             }
         }
         
     except Exception as e:
-        return {"error": str(e)}
+        print(f"❌ MINIMAL TEST FAILED: {e}")
+        return {
+            "error": f"Minimal test failed: {str(e)}",
+            "status": "container_error"
+        }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
