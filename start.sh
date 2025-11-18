@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e  # Exit on any error
 
 echo "🚀 Starting Valor Crypto LoRA API deployment..."
 echo "📅 $(date)"
