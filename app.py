@@ -58,14 +58,17 @@ def load_lora_pipeline():
         
         # Try to load custom LoRA if available
         try:
-            if os.path.exists("./crypto_lora_trained/adapter_model.safetensors"):
-                print("📚 Loading custom trained LoRA...")
+            lora_path = "./crypto_lora_trained/adapter_model.safetensors"
+            if os.path.exists(lora_path):
+                print(f"📚 Loading custom trained LoRA from {lora_path}")
                 _pipeline.load_lora_weights("./crypto_lora_trained/", adapter_name="crypto_lora")
                 print("✅ Custom LoRA loaded successfully!")
             else:
-                print("💡 Using base SDXL model (no custom LoRA found)")
+                print(f"💡 No custom LoRA found at {lora_path}, using base SDXL model")
+                print("📁 Available files:", os.listdir("."))
         except Exception as e:
-            print(f"⚠️ LoRA loading failed: {e}")
+            print(f"⚠️ LoRA loading failed, continuing with base model: {e}")
+            # Don't let LoRA failures crash the pipeline
         
         # Move to device and optimize
         _pipeline = _pipeline.to(_device)
@@ -257,16 +260,30 @@ async def generate_image(request: GenerationRequest):
         enhanced_prompt = f"{request.prompt}, professional editorial magazine cover design, high quality cryptocurrency illustration, detailed, trending"
         
         # Generate image
-        with torch.autocast(_device):
-            result = pipeline(
-                prompt=enhanced_prompt,
-                negative_prompt=request.negative_prompt,
-                num_inference_steps=request.num_inference_steps,
-                guidance_scale=request.guidance_scale,
-                width=request.width,
-                height=request.height,
-                generator=torch.Generator(_device).manual_seed(42)
-            )
+        try:
+            with torch.autocast(_device):
+                result = pipeline(
+                    prompt=enhanced_prompt,
+                    negative_prompt=request.negative_prompt,
+                    num_inference_steps=request.num_inference_steps,
+                    guidance_scale=request.guidance_scale,
+                    width=request.width,
+                    height=request.height,
+                    generator=torch.Generator(_device).manual_seed(42)
+                )
+        except Exception as generation_error:
+            print(f"❌ Image generation failed: {generation_error}")
+            # Try with simpler settings
+            print("🔄 Retrying with basic settings...")
+            with torch.autocast(_device):
+                result = pipeline(
+                    prompt=request.prompt,  # Use original prompt
+                    num_inference_steps=10,  # Reduce steps
+                    guidance_scale=5.0,      # Reduce guidance
+                    width=512,               # Smaller size
+                    height=512,
+                    generator=torch.Generator(_device).manual_seed(42)
+                )
         
         # Get generated image
         generated_image = result.images[0]
