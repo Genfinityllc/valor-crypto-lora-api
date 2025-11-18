@@ -163,7 +163,7 @@ async def health():
 
 @app.post("/run")
 async def runpod_generate(request: dict):
-    """RunPod API compatibility endpoint"""
+    """RunPod serverless endpoint - returns job for async processing"""
     try:
         # Extract input from RunPod format
         input_data = request.get("input", request)
@@ -183,22 +183,63 @@ async def runpod_generate(request: dict):
         # Generate image
         result = await generate_image(generation_request)
         
-        # Return in RunPod format
+        # Return in RunPod serverless format
         if result.success:
             return {
-                "output": {
-                    "success": True,
-                    "image_base64": result.image_base64,
-                    "metadata": result.metadata
-                }
+                "success": True,
+                "image_base64": result.image_base64,
+                "metadata": result.metadata
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result.error)
+            
+    except Exception as e:
+        print(f"❌ Error in /run endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate_sync")
+async def generate_sync(request: dict):
+    """Synchronous endpoint for direct backend integration"""
+    try:
+        # Handle both direct format and RunPod wrapper format
+        input_data = request.get("input", request)
+        
+        # Convert to our format
+        generation_request = GenerationRequest(
+            prompt=input_data.get("prompt", ""),
+            title=input_data.get("title", ""),
+            lora_scale=input_data.get("lora_scale", 1.0),
+            num_inference_steps=input_data.get("num_inference_steps", 20),
+            guidance_scale=input_data.get("guidance_scale", 7.5),
+            width=input_data.get("width", 1024),
+            height=input_data.get("height", 1024),
+            negative_prompt=input_data.get("negative_prompt", "low quality, blurry, text, watermark, signature")
+        )
+        
+        print(f"🎯 Sync generation: {generation_request.prompt}")
+        
+        # Generate image
+        result = await generate_image(generation_request)
+        
+        # Return direct result
+        if result.success:
+            return {
+                "success": True,
+                "image_base64": result.image_base64,
+                "metadata": result.metadata
             }
         else:
             return {
+                "success": False,
                 "error": result.error
             }
             
     except Exception as e:
-        return {"error": str(e)}
+        print(f"❌ Error in /generate_sync: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 @app.post("/generate", response_model=GenerationResponse)
 async def generate_image(request: GenerationRequest):
