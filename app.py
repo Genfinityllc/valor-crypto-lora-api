@@ -161,6 +161,45 @@ async def health():
         "version": "2.0"
     }
 
+@app.post("/run")
+async def runpod_generate(request: dict):
+    """RunPod API compatibility endpoint"""
+    try:
+        # Extract input from RunPod format
+        input_data = request.get("input", request)
+        
+        # Convert to our format
+        generation_request = GenerationRequest(
+            prompt=input_data.get("prompt", ""),
+            title=input_data.get("title", ""),
+            lora_scale=input_data.get("lora_scale", 1.0),
+            num_inference_steps=input_data.get("num_inference_steps", 20),
+            guidance_scale=input_data.get("guidance_scale", 7.5),
+            width=input_data.get("width", 1024),
+            height=input_data.get("height", 1024),
+            negative_prompt=input_data.get("negative_prompt", "low quality, blurry, text, watermark, signature")
+        )
+        
+        # Generate image
+        result = await generate_image(generation_request)
+        
+        # Return in RunPod format
+        if result.success:
+            return {
+                "output": {
+                    "success": True,
+                    "image_base64": result.image_base64,
+                    "metadata": result.metadata
+                }
+            }
+        else:
+            return {
+                "error": result.error
+            }
+            
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/generate", response_model=GenerationResponse)
 async def generate_image(request: GenerationRequest):
     """Generate image with optional LoRA"""
