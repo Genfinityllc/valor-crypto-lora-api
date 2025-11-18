@@ -27,4 +27,12 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); 
 
 # Start the application
 echo "🎯 Starting FastAPI application on port 8080..."
-python app.py
+
+# Try minimal test first, then full app
+if [ "${TEST_MODE:-false}" = "true" ]; then
+    echo "🧪 Running in TEST MODE - minimal API only"
+    python test_minimal.py
+else
+    echo "🚀 Running FULL AI generation API"
+    python app.py
+fi
